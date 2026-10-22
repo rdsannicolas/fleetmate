@@ -1,0 +1,1145 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  FleetMate Vehicle Diagnostic Assistant - serverless, event-driven backend
+  (Task 14.1). API Gateway (REST/OpenAPI) + Cognito JWT authorizer fronting three
+  thin Python 3.12 Lambda handlers; an event-driven persistence path
+  (EventBridge -> SQS -> persistence Lambda with a DLQ); a DynamoDB single-table
+  store (SSE + TTL + GSI1); Bedrock Guardrail references; least-privilege IAM per
+  Lambda; X-Ray tracing; CloudWatch alarms (nested stack); and canary deployment
+  with automatic rollback on alarms. CloudFormation only (SAM transforms to
+  CloudFormation), approved serverless services only, per tech.md.
+
+# ---------------------------------------------------------------------------
+# Parameters - everything environment-specific is parameterized so the same
+# template deploys to isolated dev / qa / prod stacks (tech.md environment
+# isolation). Per-environment values live under infrastructure/environments/.
+# ---------------------------------------------------------------------------
+Parameters:
+  Environment:
+    Type: String
+    Description: Deployment environment (drives naming + isolation).
+    AllowedValues: [dev, qa, prod]
+    Default: dev
+
+  LogLevel:
+    Type: String
+    Description: Structured-log verbosity for the Lambda functions.
+    AllowedValues: [DEBUG, INFO, WARN, ERROR]
+    Default: INFO
+
+  BedrockModelId:
+    Type: String
+    Description: Approved Bedrock model id (Nova or Llama only, per tech.md).
+    Default: amazon.nova-lite-v1:0
+
+  BedrockGuardrailId:
+    Type: String
+    Description: >
+      Id of a pre-provisioned Bedrock Guardrail applied on every AI invocation
+      (harmful content, prompt injection, PII, unsafe repair guidance). Supplied
+      per environment so Guardrails are never bypassed.
+
+  BedrockGuardrailVersion:
+    Type: String
+    Description: Version of the Bedrock Guardrail to apply.
+    Default: DRAFT
+
+  SessionTtlDays:
+    Type: Number
+    Description: DynamoDB TTL horizon (days) for idle session cleanup.
+    Default: 30
+    MinValue: 1
+
+  ApiStageName:
+    Type: String
+    Description: API Gateway stage name.
+    Default: v1
+
+  CanaryDeploymentType:
+    Type: String
+    Description: >
+      SAM/CodeDeploy traffic-shifting strategy for Lambda aliases. Canary or
+      linear configurations give blue/green-style gradual cutover with automatic
+      rollback on alarm (tech.md deployment standards).
+    AllowedValues:
+      - Canary10Percent5Minutes
+      - Canary10Percent10Minutes
+      - Linear10PercentEvery1Minute
+      - Linear10PercentEvery2Minutes
+      - AllAtOnce
+    Default: Canary10Percent5Minutes
+
+  AlarmEmail:
+    Type: String
+    Description: Email subscribed to the SNS alarm topic for critical alarms.
+    Default: ""
+
+  CognitoDomainPrefix:
+    Type: String
+    Description: >
+      Globally unique prefix for the Cognito-provided Hosted UI domain
+      (*.auth.<region>.amazoncognito.com). Lowercase alphanumeric and hyphens
+      only, 1-63 characters. Defaults empty so a stable per-environment prefix
+      derived from the account id is used; override to resolve a global
+      uniqueness collision (Req 12.2).
+    Default: ""
+    AllowedPattern: "^$|^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+    ConstraintDescription: >
+      Must be empty or 1-63 lowercase alphanumeric characters and hyphens, not
+      starting or ending with a hyphen.
+
+# ---------------------------------------------------------------------------
+# Conditions
+# ---------------------------------------------------------------------------
+Conditions:
+  IsProd: !Equals [!Ref Environment, prod]
+  # Gradual, alarm-guarded rollout for every environment except AllAtOnce.
+  UseGradualDeploy: !Not [!Equals [!Ref CanaryDeploymentType, AllAtOnce]]
+  # Use the supplied Cognito domain prefix when given, else derive a stable one.
+  HasCognitoDomainPrefix: !Not [!Equals [!Ref CognitoDomainPrefix, ""]]
+
+# ---------------------------------------------------------------------------
+# Globals - shared Lambda defaults. Thin handlers are stateless, use structured
+# JSON logging, explicit timeouts, and X-Ray active tracing (tech.md).
+# ---------------------------------------------------------------------------
+Globals:
+  Function:
+    Runtime: python3.12
+    MemorySize: 512
+    Timeout: 15
+    Tracing: Active
+    Architectures:
+      - arm64
+    PropagateTags: true
+    Environment:
+      Variables:
+        FLEETMATE_TABLE_NAME: !Ref DiagnosticsTable
+        FLEETMATE_EVENT_BUS: !Ref DiagnosticsEventBus
+        LOG_LEVEL: !Ref LogLevel
+        POWERTOOLS_SERVICE_NAME: fleetmate-diagnostics
+    Tags:
+      Project: FleetMate
+      Environment: !Ref Environment
+  Api:
+    TracingEnabled: true
+    OpenApiVersion: 3.0.1
+
+Resources:
+
+  # =========================================================================
+  # Data layer - DynamoDB single-table (SSE + TTL + GSI1), per tech.md.
+  # =========================================================================
+  DiagnosticsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub "FleetMateDiagnostics-${Environment}"
+      BillingMode: PAY_PER_REQUEST
+      # PK/SK single-table keys plus GSI1PK/GSI1SK for analyst date-range queries,
+      # and GSI2PK/GSI2SK for the owner-scoped most-recent-prior-interaction query (Req 13).
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: GSI1PK
+          AttributeType: S
+        - AttributeName: GSI1SK
+          AttributeType: S
+        - AttributeName: GSI2PK
+          AttributeType: S
+        - AttributeName: GSI2SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        # GSI2 - owner-scoped most-recent-prior-interaction query (Req 13.1, 13.3, 13.4).
+        # GSI2PK = CUSTOMER#{customerId}, GSI2SK = {createdAt}#{recordId}; queried
+        # newest-first (ScanIndexForward=false) to resolve the latest prior interaction.
+        # ProjectionType: ALL matches GSI1 and guarantees every attribute the panel
+        # renders is present (recordId, sessionId, symptomDescription, result.*,
+        # createdAt, customerId) for this forward-only, low-volume access pattern.
+        # Forward-only: adding this GSI is an online UpdateTable on the live table.
+        # Existing records are NOT in GSI2 - only records written after this change
+        # (which carry the GSI2PK/GSI2SK key attributes) are queryable via GSI2.
+        - IndexName: GSI2
+          KeySchema:
+            - AttributeName: GSI2PK
+              KeyType: HASH
+            - AttributeName: GSI2SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      # DynamoDB SSE (tech.md Encryption: DynamoDB SSE).
+      SSESpecification:
+        SSEEnabled: true
+      # TTL attribute on session items for idle-session cleanup (design).
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: !If [IsProd, true, false]
+      Tags:
+        - Key: Project
+          Value: FleetMate
+        - Key: Environment
+          Value: !Ref Environment
+
+  # =========================================================================
+  # Secrets Manager - no hardcoded credentials (tech.md). A per-environment
+  # secret for any downstream integration config the AI engine may need.
+  # =========================================================================
+  AiIntegrationSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "fleetmate/${Environment}/ai-integration"
+      Description: >
+        FleetMate AI integration configuration (per environment). Lambdas read
+        this at runtime via Secrets Manager; nothing is hardcoded or committed.
+      SecretString: !Sub '{"bedrockModelId":"${BedrockModelId}","guardrailId":"${BedrockGuardrailId}","guardrailVersion":"${BedrockGuardrailVersion}"}'
+      Tags:
+        - Key: Project
+          Value: FleetMate
+        - Key: Environment
+          Value: !Ref Environment
+
+  # =========================================================================
+  # Cognito - OAuth2/JWT user pool + app client + analyst group (RBAC).
+  # Custom auth is prohibited (tech.md); API Gateway uses a Cognito authorizer.
+  # =========================================================================
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "fleetmate-${Environment}"
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+      UserPoolTags:
+        Project: FleetMate
+        Environment: !Ref Environment
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub "fleetmate-web-${Environment}"
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      # Hosted-UI OAuth authorization-code flow (PKCE) for the public SPA
+      # (Req 6.6). The callback/logout URLs are derived from the CloudFront
+      # distribution domain within this same stack via !Sub/!GetAtt, which makes
+      # CloudFront an implicit dependency so it is created before the client
+      # update - resolving the callback-URL chicken-and-egg (no manual 2nd step).
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+      CallbackURLs:
+        # Cognito callback URLs cannot carry a URL fragment, so register the base
+        # CloudFront HTTPS origin (and trailing-slash variant). The SPA reads the
+        # authorization code from the query string and hash-routes to /callback.
+        - !Sub "https://${WebAppDistribution.DomainName}"
+        - !Sub "https://${WebAppDistribution.DomainName}/"
+      LogoutURLs:
+        - !Sub "https://${WebAppDistribution.DomainName}"
+        - !Sub "https://${WebAppDistribution.DomainName}/"
+      # Retain the direct-token auth flows so SRP / password / refresh still work
+      # for dev/integration testing (password auth is handy for integration tests).
+      SupportedIdentityProviders:
+        - COGNITO
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+
+  # Cognito-provided Hosted UI domain (*.auth.<region>.amazoncognito.com). No
+  # custom domain and no ACM certificate, so the deployment needs no Route 53 or
+  # custom TLS (Req 12.2, 12.3). The prefix must be globally unique and valid
+  # (lowercase alphanumeric/hyphen, <=63 chars); it defaults to a stable
+  # per-environment value derived from the account id, overridable via the
+  # CognitoDomainPrefix parameter if a global collision occurs.
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !If
+        - HasCognitoDomainPrefix
+        - !Ref CognitoDomainPrefix
+        - !Sub "fleetmate-${Environment}-${AWS::AccountId}"
+      UserPoolId: !Ref UserPool
+
+  # Analyst RBAC group: membership populates the "cognito:groups" claim the
+  # service layer checks to distinguish an analyst from a Customer.
+  AnalystGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: analysts
+      Description: Business analysts authorized to run date-range queries.
+      UserPoolId: !Ref UserPool
+
+  # =========================================================================
+  # Async persistence transport - EventBridge bus + SQS queue + DLQ.
+  # EventBridge -> SQS -> persistence Lambda (design, non-blocking storage).
+  # =========================================================================
+  DiagnosticsEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !Sub "fleetmate-diagnostics-${Environment}"
+
+  # Dead-letter queue for messages that fail after redrive (tech.md DLQ required).
+  PersistenceDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "fleetmate-persistence-dlq-${Environment}"
+      MessageRetentionPeriod: 1209600 # 14 days
+      SqsManagedSseEnabled: true
+
+  PersistenceQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "fleetmate-persistence-${Environment}"
+      # Visibility timeout must exceed the consumer timeout (retry + write).
+      VisibilityTimeout: 60
+      MessageRetentionPeriod: 345600 # 4 days
+      SqsManagedSseEnabled: true
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt PersistenceDeadLetterQueue.Arn
+        # Redrive to the DLQ after the single app-level retry is exhausted.
+        maxReceiveCount: 3
+
+  # Allow EventBridge to deliver matched events into the SQS queue.
+  PersistenceQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref PersistenceQueue
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowEventBridgeSend
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sqs:SendMessage
+            Resource: !GetAtt PersistenceQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !GetAtt DiagnosisCompletedRule.Arn
+
+  # Rule: route DiagnosisCompleted events from our bus to the persistence queue.
+  DiagnosisCompletedRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "fleetmate-diagnosis-completed-${Environment}"
+      EventBusName: !Ref DiagnosticsEventBus
+      Description: Route DiagnosisCompleted events to the persistence queue.
+      EventPattern:
+        source:
+          - fleetmate.diagnostics
+        detail-type:
+          - DiagnosisCompleted
+      State: ENABLED
+      Targets:
+        - Id: persistence-queue
+          Arn: !GetAtt PersistenceQueue.Arn
+
+  # =========================================================================
+  # REST API - API Gateway with an inline OpenAPI body and a Cognito authorizer.
+  # TLS is enforced by API Gateway (HTTPS only). Resource-style paths per tech.md.
+  # =========================================================================
+  DiagnosticsApi:
+    Type: AWS::Serverless::Api
+    # W3660 warns when more than one resource relates to a REST API's definition
+    # body. The AWS::ApiGateway::GatewayResponse resources below attach CORS
+    # headers to API-Gateway-generated error responses; they do not redefine or
+    # overwrite this inline OpenAPI DefinitionBody, so the drift/orphan risk the
+    # rule describes does not apply. Suppressed here (the rule reports against the
+    # body-owning resource) to keep `sam validate --lint` green. Purely additive.
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - W3660
+    Properties:
+      Name: !Sub "fleetmate-api-${Environment}"
+      StageName: !Ref ApiStageName
+      Auth:
+        # No DefaultAuthorizer. With an inline OpenAPI DefinitionBody, a default
+        # authorizer is injected by the SAM transform onto EVERY operation that
+        # SAM considers unprotected - including the hand-authored OPTIONS
+        # preflights - which is why `security: []` and
+        # `x-amazon-apigateway-auth: {type: NONE}` on the OPTIONS operations did
+        # not stop the 401: SAM re-applied the default Cognito authorizer to them.
+        # (AddDefaultAuthorizerToCorsPreflight only governs OPTIONS methods SAM
+        # itself generates from a `Cors` property, not ones hand-authored in the
+        # DefinitionBody.) Instead, the Cognito authorizer is attached EXPLICITLY
+        # to each POST/GET via `security: [{ CognitoJwtAuthorizer: [] }]` in the
+        # OpenAPI body below, and the OPTIONS operations carry `security: []`.
+        # With nothing to default, OPTIONS stays unauthenticated (MOCK 204 with
+        # CORS headers) while POST/GET stay Cognito-protected.
+        AddDefaultAuthorizerToCorsPreflight: false
+        Authorizers:
+          CognitoJwtAuthorizer:
+            UserPoolArn: !GetAtt UserPool.Arn
+            Identity:
+              Header: Authorization
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          MetricsEnabled: true
+          DataTraceEnabled: false
+          LoggingLevel: INFO
+          ThrottlingBurstLimit: 200
+          ThrottlingRateLimit: 100
+      DefinitionBody:
+        openapi: "3.0.1"
+        info:
+          title: !Sub "FleetMate Diagnostics API (${Environment})"
+          version: "1.0.0"
+        paths:
+          /diagnostics/analyze:
+            post:
+              summary: Submit a vehicle symptom and receive a structured diagnosis.
+              security:
+                - CognitoJwtAuthorizer: []
+              responses:
+                "200":
+                  description: Structured diagnosis.
+                "422":
+                  description: Invalid symptom / unusable session.
+                "503":
+                  description: AI timeout or failure.
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AnalyzeFunctionAliaslive}/invocations"
+                passthroughBehavior: when_no_match
+            # CORS preflight (Task 24.3): unauthenticated MOCK integration so the
+            # browser preflight succeeds WITHOUT the Cognito authorizer. Reflects
+            # the specific CloudFront origin (never "*", since calls are credentialed
+            # with the Authorization header) and allows POST + OPTIONS.
+            options:
+              summary: CORS preflight for POST /diagnostics/analyze.
+              security: []
+              x-amazon-apigateway-auth:
+                type: NONE
+              responses:
+                "204":
+                  description: CORS preflight response.
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode": 204}'
+                responses:
+                  default:
+                    statusCode: "204"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: !Sub "'https://${WebAppDistribution.DomainName}'"
+                      method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+                    responseTemplates:
+                      application/json: ""
+                passthroughBehavior: when_no_match
+          /diagnostics/history:
+            get:
+              summary: Retrieve a Customer's own session history (paginated).
+              security:
+                - CognitoJwtAuthorizer: []
+              parameters:
+                - name: sessionId
+                  in: query
+                  required: true
+                  schema:
+                    type: string
+                - name: pageToken
+                  in: query
+                  required: false
+                  schema:
+                    type: string
+              responses:
+                "200":
+                  description: Ascending, <=50-record page.
+                "400":
+                  description: Missing/invalid parameters.
+                "403":
+                  description: Not the session owner.
+                "404":
+                  description: Unknown session.
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HistoryFunctionAliaslive}/invocations"
+                passthroughBehavior: when_no_match
+            # CORS preflight (Task 24.3): unauthenticated MOCK integration; allows
+            # GET + OPTIONS and reflects the specific CloudFront origin.
+            options:
+              summary: CORS preflight for GET /diagnostics/history.
+              security: []
+              x-amazon-apigateway-auth:
+                type: NONE
+              responses:
+                "204":
+                  description: CORS preflight response.
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode": 204}'
+                responses:
+                  default:
+                    statusCode: "204"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: !Sub "'https://${WebAppDistribution.DomainName}'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+                    responseTemplates:
+                      application/json: ""
+                passthroughBehavior: when_no_match
+          # GET /diagnostics/previous (Task 32.3, Req 13.7, 13.9): resolve the
+          # caller's most-recent PRIOR interaction (owner-scoped via GSI2),
+          # excluding the current session. Wired to PreviousFunction's live alias
+          # under the SAME Cognito ID-token authorizer as GET /diagnostics/history.
+          #
+          # NOTE: this is a REST API method/auth change. After deploy the API
+          # Gateway stage must be FORCE-REDEPLOYED for GET /diagnostics/previous
+          # to go live, because REST API method/authorizer changes are not always
+          # picked up by the stage automatically:
+          #   aws apigateway create-deployment --rest-api-id <id> --stage-name v1
+          # (Informational - the actual redeploy happens in task 35.)
+          #
+          # NOTE: the existing AWS::ApiGateway::GatewayResponse resources
+          # (UNAUTHORIZED / ACCESS_DENIED / DEFAULT_4XX / DEFAULT_5XX) already
+          # attach CORS headers whose Access-Control-Allow-Methods is
+          # 'GET,POST,OPTIONS' - which includes GET - so a gateway-level 401/403
+          # on this new route is browser-readable with NO further change here.
+          /diagnostics/previous:
+            get:
+              summary: Retrieve the caller's most-recent prior interaction (owner-scoped).
+              security:
+                - CognitoJwtAuthorizer: []
+              parameters:
+                - name: currentSessionId
+                  in: query
+                  required: true
+                  schema:
+                    type: string
+              responses:
+                "200":
+                  description: Most-recent prior record, or null when none exists.
+                "400":
+                  description: Missing/invalid currentSessionId.
+                "403":
+                  description: Not the owner of the prior interaction.
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PreviousFunctionAliaslive}/invocations"
+                passthroughBehavior: when_no_match
+            # CORS preflight (Task 24.3): unauthenticated MOCK integration; allows
+            # GET + OPTIONS and reflects the specific CloudFront origin. Mirrors
+            # the per-resource preflight on /diagnostics/history exactly.
+            options:
+              summary: CORS preflight for GET /diagnostics/previous.
+              security: []
+              x-amazon-apigateway-auth:
+                type: NONE
+              responses:
+                "204":
+                  description: CORS preflight response.
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode": 204}'
+                responses:
+                  default:
+                    statusCode: "204"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: !Sub "'https://${WebAppDistribution.DomainName}'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+                    responseTemplates:
+                      application/json: ""
+                passthroughBehavior: when_no_match
+          /repair-estimates:
+            get:
+              summary: Analyst date-range query over persisted interactions.
+              security:
+                - CognitoJwtAuthorizer: []
+              parameters:
+                - name: start
+                  in: query
+                  required: true
+                  schema:
+                    type: string
+                - name: end
+                  in: query
+                  required: true
+                  schema:
+                    type: string
+              responses:
+                "200":
+                  description: Ascending in-range records.
+                "400":
+                  description: Missing parameters / inverted range.
+                "403":
+                  description: Caller lacks the analyst role.
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RepairEstimatesFunctionAliaslive}/invocations"
+                passthroughBehavior: when_no_match
+            # CORS preflight (Task 24.3): analyst-only endpoint isn't called by this
+            # SPA, but enabling preflight here keeps CORS uniform and harmless.
+            options:
+              summary: CORS preflight for GET /repair-estimates.
+              security: []
+              x-amazon-apigateway-auth:
+                type: NONE
+              responses:
+                "204":
+                  description: CORS preflight response.
+                  headers:
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode": 204}'
+                responses:
+                  default:
+                    statusCode: "204"
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: !Sub "'https://${WebAppDistribution.DomainName}'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+                    responseTemplates:
+                      application/json: ""
+                passthroughBehavior: when_no_match
+        components:
+          securitySchemes:
+            CognitoJwtAuthorizer:
+              type: apiKey
+              name: Authorization
+              in: header
+              x-amazon-apigateway-authtype: cognito_user_pools
+
+  # =========================================================================
+  # API Gateway default gateway responses - CORS headers on the error
+  # responses API Gateway itself generates (NOT the Lambda). The Cognito
+  # authorizer rejects an unauthenticated/forbidden call with a gateway-level
+  # 401 UNAUTHORIZED / 403 ACCESS_DENIED that never reaches the Lambda, so those
+  # responses carry none of the Access-Control-Allow-Origin headers the Lambda
+  # normally echoes (WEB_APP_ORIGIN in handlers/_http.py). Without them the
+  # browser blocks the response with "CORS Missing Allow Origin" and the SPA
+  # sees an opaque network error instead of a readable 401/403. These
+  # GatewayResponse resources attach the same specific-origin CORS headers to
+  # the gateway-generated UNAUTHORIZED, ACCESS_DENIED, DEFAULT_4XX, and
+  # DEFAULT_5XX responses. The origin is the single CloudFront HTTPS origin
+  # (API Gateway requires the single-quoted literal syntax, never "*", since
+  # calls are credentialed with the Authorization header). Purely additive.
+  # =========================================================================
+  ApiGatewayResponseUnauthorized:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      RestApiId: !Ref DiagnosticsApi
+      ResponseType: UNAUTHORIZED
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: !Sub "'https://${WebAppDistribution.DomainName}'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+
+  ApiGatewayResponseAccessDenied:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      RestApiId: !Ref DiagnosticsApi
+      ResponseType: ACCESS_DENIED
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: !Sub "'https://${WebAppDistribution.DomainName}'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+
+  ApiGatewayResponseDefault4xx:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      RestApiId: !Ref DiagnosticsApi
+      ResponseType: DEFAULT_4XX
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: !Sub "'https://${WebAppDistribution.DomainName}'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+
+  ApiGatewayResponseDefault5xx:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      RestApiId: !Ref DiagnosticsApi
+      ResponseType: DEFAULT_5XX
+      ResponseParameters:
+        gatewayresponse.header.Access-Control-Allow-Origin: !Sub "'https://${WebAppDistribution.DomainName}'"
+        gatewayresponse.header.Access-Control-Allow-Headers: "'Authorization,Content-Type'"
+        gatewayresponse.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+
+  # =========================================================================
+  # Shared DeploymentPreference role for CodeDeploy traffic shifting / rollback.
+  # =========================================================================
+  CodeDeployServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "fleetmate-codedeploy-${Environment}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codedeploy.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambdaLimited
+
+  # =========================================================================
+  # API Lambda functions - thin handlers (entry points under backend/src).
+  # Each gets a least-privilege, per-function IAM policy (no shared wildcard
+  # role). AutoPublishAlias + DeploymentPreference give canary rollout with
+  # automatic rollback on the attached CloudWatch alarms (tech.md deployment).
+  # =========================================================================
+
+  # POST /diagnostics/analyze - needs DynamoDB RW, EventBridge put, Bedrock
+  # invoke (model + guardrail), and the Secrets Manager read.
+  AnalyzeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "fleetmate-analyze-${Environment}"
+      CodeUri: src/
+      Handler: handlers.analyze.handler
+      Timeout: 35 # must exceed the 30s AI generation timeout (Req 2.6)
+      MemorySize: 1024
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Enabled: !If [UseGradualDeploy, true, false]
+        Type: !Ref CanaryDeploymentType
+        Role: !GetAtt CodeDeployServiceRole.Arn
+        Alarms:
+          - !GetAtt Alarms.Outputs.AnalyzeErrorAlarmName
+          - !GetAtt Alarms.Outputs.AnalyzeLatencyAlarmName
+      Environment:
+        Variables:
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+          BEDROCK_GUARDRAIL_ID: !Ref BedrockGuardrailId
+          BEDROCK_GUARDRAIL_VERSION: !Ref BedrockGuardrailVersion
+          AI_INTEGRATION_SECRET_ARN: !Ref AiIntegrationSecret
+          # CORS: the specific CloudFront origin the handlers echo as
+          # Access-Control-Allow-Origin on every response (Task 24.3).
+          WEB_APP_ORIGIN: !Sub "https://${WebAppDistribution.DomainName}"
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DiagnosticsTable
+        - Statement:
+            - Sid: AllowEventBridgePut
+              Effect: Allow
+              Action: events:PutEvents
+              Resource: !GetAtt DiagnosticsEventBus.Arn
+            - Sid: AllowBedrockInvokeWithGuardrail
+              Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+                - bedrock:ApplyGuardrail
+              Resource:
+                - !Sub "arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/*"
+                - !Sub "arn:${AWS::Partition}:bedrock:${AWS::Region}:${AWS::AccountId}:guardrail/${BedrockGuardrailId}"
+            - Sid: AllowReadAiSecret
+              Effect: Allow
+              Action: secretsmanager:GetSecretValue
+              Resource: !Ref AiIntegrationSecret
+      Events:
+        Analyze:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DiagnosticsApi
+            Path: /diagnostics/analyze
+            Method: post
+
+  # GET /diagnostics/history - read-only DynamoDB access (owner history).
+  HistoryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "fleetmate-history-${Environment}"
+      CodeUri: src/
+      Handler: handlers.history.handler
+      Timeout: 10
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Enabled: !If [UseGradualDeploy, true, false]
+        Type: !Ref CanaryDeploymentType
+        Role: !GetAtt CodeDeployServiceRole.Arn
+        Alarms:
+          - !GetAtt Alarms.Outputs.HistoryErrorAlarmName
+      Environment:
+        Variables:
+          # CORS: echoed as Access-Control-Allow-Origin on every response (Task 24.3).
+          WEB_APP_ORIGIN: !Sub "https://${WebAppDistribution.DomainName}"
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref DiagnosticsTable
+      Events:
+        History:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DiagnosticsApi
+            Path: /diagnostics/history
+            Method: get
+
+  # GET /diagnostics/previous - owner-scoped most-recent-prior-interaction
+  # lookup (Req 13). Strictly least-privilege: the handler performs ONLY the
+  # owner-scoped GSI2 Query (query_most_recent_prior), so it needs just
+  # dynamodb:Query - no DynamoDBReadPolicy/CRUD, no GetItem, no PutItem. A GSI
+  # Query is authorized against BOTH the base-table ARN and the index ARN, so
+  # the single statement grants dynamodb:Query on the table AND its /index/GSI2
+  # (mirrors RepairEstimatesFunction's AllowQueryGsi1 pattern, pointed at GSI2).
+  #
+  # No Events: Api block here on purpose - the route is wired via the inline
+  # OpenAPI DefinitionBody in task 32.3 (through ${PreviousFunctionAliaslive}),
+  # exactly like AnalyzeFunction/HistoryFunction/RepairEstimatesFunction; adding
+  # an Events: Api block would create a duplicate/conflicting method.
+  #
+  # AutoPublishAlias: live is required so 32.3's OpenAPI integration can target
+  # ${PreviousFunctionAliaslive}. DeploymentPreference is intentionally OMITTED:
+  # the monitoring nested stack (infrastructure/cloudformation/monitoring.yaml)
+  # has no PreviousFunction error-alarm output yet, and referencing a
+  # non-existent nested-stack output would fail the deploy. Omitting the block
+  # publishes the alias AllAtOnce (no canary gate) - acceptable for this small
+  # read-only function and avoids a dangling alarm reference. Tracing (X-Ray)
+  # and structured logging (LOG_LEVEL/POWERTOOLS_SERVICE_NAME) come from the
+  # Globals: Function section, so they are not re-declared here.
+  PreviousFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "fleetmate-previous-${Environment}"
+      CodeUri: src/
+      Handler: handlers.previous.handler
+      Timeout: 10
+      AutoPublishAlias: live
+      Environment:
+        Variables:
+          # CORS: echoed as Access-Control-Allow-Origin on every response (Task 24.3).
+          WEB_APP_ORIGIN: !Sub "https://${WebAppDistribution.DomainName}"
+      Policies:
+        - Statement:
+            - Sid: AllowQueryGsi2
+              Effect: Allow
+              Action: dynamodb:Query
+              # A GSI Query is evaluated against the base table ARN plus the
+              # index ARN, so both resources are required for the GSI2 query.
+              Resource:
+                - !Sub "${DiagnosticsTable.Arn}/index/GSI2"
+                - !GetAtt DiagnosticsTable.Arn
+
+  # GET /repair-estimates - read-only DynamoDB access incl. the GSI1 index.
+  RepairEstimatesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "fleetmate-repair-estimates-${Environment}"
+      CodeUri: src/
+      Handler: handlers.repair_estimates.handler
+      Timeout: 10
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Enabled: !If [UseGradualDeploy, true, false]
+        Type: !Ref CanaryDeploymentType
+        Role: !GetAtt CodeDeployServiceRole.Arn
+        Alarms:
+          - !GetAtt Alarms.Outputs.RepairEstimatesErrorAlarmName
+      Environment:
+        Variables:
+          # CORS: echoed as Access-Control-Allow-Origin on every response (Task 24.3).
+          WEB_APP_ORIGIN: !Sub "https://${WebAppDistribution.DomainName}"
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref DiagnosticsTable
+        - Statement:
+            - Sid: AllowQueryGsi1
+              Effect: Allow
+              Action: dynamodb:Query
+              Resource: !Sub "${DiagnosticsTable.Arn}/index/GSI1"
+      Events:
+        RepairEstimates:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DiagnosticsApi
+            Path: /repair-estimates
+            Method: get
+
+  # =========================================================================
+  # Persistence Lambda - the SQS consumer end of the async write path.
+  # DynamoDB write access only; a DLQ is configured on the event source.
+  # =========================================================================
+  PersistenceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "fleetmate-persistence-${Environment}"
+      CodeUri: src/
+      Handler: diagnostics.events.persistence_lambda.PersistenceLambda.handle
+      Timeout: 30
+      ReservedConcurrentExecutions: !If [IsProd, 20, !Ref "AWS::NoValue"]
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DiagnosticsTable
+      Events:
+        PersistQueue:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt PersistenceQueue.Arn
+            BatchSize: 10
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+
+  # =========================================================================
+  # Monitoring - CloudWatch alarms live in a nested stack for cohesion
+  # (infrastructure/cloudformation/monitoring.yaml). It is parameterized with
+  # the resource names/arns it needs and exports the alarm names the
+  # DeploymentPreference references for automatic rollback.
+  # =========================================================================
+  Alarms:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: ../infrastructure/cloudformation/monitoring.yaml
+      Parameters:
+        Environment: !Ref Environment
+        AnalyzeFunctionName: !Ref AnalyzeFunction
+        HistoryFunctionName: !Ref HistoryFunction
+        RepairEstimatesFunctionName: !Ref RepairEstimatesFunction
+        PersistenceFunctionName: !Ref PersistenceFunction
+        ApiName: !Sub "fleetmate-api-${Environment}"
+        ApiStageName: !Ref ApiStageName
+        AlarmEmail: !Ref AlarmEmail
+
+  # =========================================================================
+  # Web tier (Task 24.1) - static single-page-app hosting. A PRIVATE S3 bucket
+  # holds the compiled Web_Client assets (Req 11.1) and is served only through
+  # a CloudFront distribution using Origin Access Control (Req 11.4). The
+  # deployment uses the default *.cloudfront.net domain - no Route 53, no custom
+  # DNS, no custom TLS certificate (Req 12.1, 12.3). Task 24.2 added the Cognito
+  # UserPoolDomain (Hosted UI) and the OAuth authorization-code flow on the
+  # App_Client (see the Cognito section above). Task 24.3 added API CORS for the
+  # CloudFront origin: unauthenticated OPTIONS preflight MOCK integrations in the
+  # OpenAPI body above, plus the WEB_APP_ORIGIN env var on the API Lambdas so their
+  # responses echo Access-Control-Allow-Origin = the CloudFront HTTPS origin.
+  # =========================================================================
+
+  # Private origin bucket: Block Public Access fully on, SSE-S3 (AES256), and
+  # no website configuration - the bucket is reachable only via CloudFront.
+  WebAppBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      # Account id keeps the bucket name globally unique across environments.
+      BucketName: !Sub "fleetmate-web-${Environment}-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+            BucketKeyEnabled: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Project
+          Value: FleetMate
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Origin Access Control - SigV4, always sign (the OAC pattern that replaces
+  # the legacy origin access identity). CloudFront signs every origin request
+  # so the private bucket can be locked to this distribution only.
+  WebAppOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "fleetmate-web-oac-${Environment}"
+        Description: OAC for the FleetMate SPA origin bucket.
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # CloudFront distribution: default *.cloudfront.net domain (no aliases/ACM),
+  # index.html root, HTTP -> HTTPS redirect (Req 11.5), a managed caching
+  # policy tuned for static SPA assets, and SPA fallback via custom error
+  # responses mapping 403/404 to /index.html with a 200 (Req 11.3).
+  WebAppDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: !Sub "FleetMate Web_Client (${Environment})"
+        Enabled: true
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        DefaultRootObject: index.html
+        PriceClass: PriceClass_100
+        Origins:
+          - Id: WebAppS3Origin
+            # S3 REST (regional) domain name - NOT the public S3 website
+            # endpoint - so the origin stays private behind OAC.
+            DomainName: !GetAtt WebAppBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt WebAppOriginAccessControl.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: WebAppS3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD, OPTIONS]
+          # AWS managed "CachingOptimized" policy - sensible static-asset
+          # caching for an SPA (long TTLs, gzip/brotli).
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        CustomErrorResponses:
+          # SPA fallback so client-side routes resolve: a request for a path
+          # with no stored object returns the entry document with a 200.
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 10
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 10
+        ViewerCertificate:
+          # Default CloudFront certificate - no ACM / custom cert (Req 12.1, 12.3).
+          CloudFrontDefaultCertificate: true
+      Tags:
+        - Key: Project
+          Value: FleetMate
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Bucket policy: grant s3:GetObject to the CloudFront service principal,
+  # restricted to this distribution's ARN (OAC pattern). The bucket is reachable
+  # ONLY through CloudFront; direct-to-origin requests are denied (Req 11.4).
+  WebAppBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebAppBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipalReadOnly
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${WebAppBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${WebAppDistribution}"
+
+Outputs:
+  ApiBaseUrl:
+    Description: Invoke URL for the REST API stage.
+    Value: !Sub "https://${DiagnosticsApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}"
+  UserPoolId:
+    Description: Cognito user pool id.
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Description: Cognito app client id.
+    Value: !Ref UserPoolClient
+  CognitoDomain:
+    Description: >
+      Hosted UI base URL on the Cognito-provided domain (Req 12.2). Used to build
+      the SPA runtime auth config (task 25.1).
+    Value: !Sub "https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com"
+  WebCallbackUrl:
+    Description: OAuth authorization-code callback URL registered on the App_Client (Req 6.6, 12.4).
+    Value: !Sub "https://${WebAppDistribution.DomainName}"
+  WebLogoutUrl:
+    Description: Hosted UI logout redirect URL registered on the App_Client (Req 12.4).
+    Value: !Sub "https://${WebAppDistribution.DomainName}"
+  DiagnosticsTableName:
+    Description: DynamoDB single-table name.
+    Value: !Ref DiagnosticsTable
+  EventBusName:
+    Description: EventBridge bus for DiagnosisCompleted events.
+    Value: !Ref DiagnosticsEventBus
+  PersistenceQueueUrl:
+    Description: SQS persistence queue URL.
+    Value: !Ref PersistenceQueue
+  PersistenceDlqUrl:
+    Description: SQS dead-letter queue URL.
+    Value: !Ref PersistenceDeadLetterQueue
+  AiIntegrationSecretArn:
+    Description: Secrets Manager ARN for AI integration config.
+    Value: !Ref AiIntegrationSecret
+  WebAppUrl:
+    Description: HTTPS URL of the Web_Client served via the default CloudFront domain.
+    Value: !Sub "https://${WebAppDistribution.DomainName}"
+  WebAppDistributionId:
+    Description: CloudFront distribution id (used for cache invalidation at deploy time).
+    Value: !Ref WebAppDistribution
+  WebAppBucketName:
+    Description: Private S3 bucket that stores the compiled SPA assets (asset upload target).
+    Value: !Ref WebAppBucket

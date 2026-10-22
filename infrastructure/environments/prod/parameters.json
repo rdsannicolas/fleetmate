@@ -1,0 +1,11 @@
+[
+  { "ParameterKey": "Environment", "ParameterValue": "prod" },
+  { "ParameterKey": "LogLevel", "ParameterValue": "INFO" },
+  { "ParameterKey": "BedrockModelId", "ParameterValue": "amazon.nova-pro-v1:0" },
+  { "ParameterKey": "BedrockGuardrailId", "ParameterValue": "REPLACE_WITH_PROD_GUARDRAIL_ID" },
+  { "ParameterKey": "BedrockGuardrailVersion", "ParameterValue": "1" },
+  { "ParameterKey": "SessionTtlDays", "ParameterValue": "90" },
+  { "ParameterKey": "ApiStageName", "ParameterValue": "v1" },
+  { "ParameterKey": "CanaryDeploymentType", "ParameterValue": "Canary10Percent5Minutes" },
+  { "ParameterKey": "AlarmEmail", "ParameterValue": "fleetmate-prod-oncall@example.com" }
+]

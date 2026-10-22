@@ -1,0 +1,71 @@
+# SAM CLI configuration for FleetMate (Task 14.1).
+# Each environment deploys an isolated CloudFormation stack. Guardrail ids and
+# alarm emails are placeholders - override at deploy time or wire from the
+# per-environment files under infrastructure/environments/{dev,qa,prod}/.
+#
+# Deploy examples:
+#   sam build
+#   sam deploy --config-env dev
+#   sam deploy --config-env qa
+#   sam deploy --config-env prod
+#
+# Validation (no deploy):
+#   sam validate --lint
+
+version = 0.1
+
+[default.global.parameters]
+stack_name = "fleetmate-dev"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.validate.parameters]
+lint = true
+
+# ---------------------------------------------------------------------------
+# dev
+# ---------------------------------------------------------------------------
+[dev.deploy.parameters]
+stack_name = "fleetmate-dev"
+capabilities = "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
+confirm_changeset = true
+resolve_s3 = true
+parameter_overrides = [
+  "Environment=dev",
+  "LogLevel=DEBUG",
+  "CanaryDeploymentType=AllAtOnce",
+  "BedrockModelId=amazon.nova-lite-v1:0",
+  "BedrockGuardrailId=8kizo4b64wg7",
+  "BedrockGuardrailVersion=1",
+  "SessionTtlDays=7",
+]
+
+# ---------------------------------------------------------------------------
+# qa
+# ---------------------------------------------------------------------------
+[qa.deploy.parameters]
+stack_name = "fleetmate-qa"
+capabilities = "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
+confirm_changeset = true
+resolve_s3 = true
+parameter_overrides = [
+  "Environment=qa",
+  "LogLevel=INFO",
+  "CanaryDeploymentType=Linear10PercentEvery2Minutes",
+]
+
+# ---------------------------------------------------------------------------
+# prod
+# ---------------------------------------------------------------------------
+[prod.deploy.parameters]
+stack_name = "fleetmate-prod"
+capabilities = "CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
+confirm_changeset = true
+resolve_s3 = true
+parameter_overrides = [
+  "Environment=prod",
+  "LogLevel=INFO",
+  "CanaryDeploymentType=Canary10Percent5Minutes",
+]

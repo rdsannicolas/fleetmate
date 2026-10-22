@@ -1,0 +1,281 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  FleetMate monitoring stack (Task 14.1) - CloudWatch alarms and an SNS alarm
+  topic for the Vehicle Diagnostic Assistant. Nested under backend/template.yaml.
+  Covers the five alarm classes required by tech.md observability standards:
+  Lambda error rate, API latency, Bedrock response latency, token-usage spikes,
+  and confidence-score degradation. The per-function error/latency alarm names
+  are exported so the SAM DeploymentPreference can roll back automatically when
+  an alarm fires during a canary deployment.
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues: [dev, qa, prod]
+  AnalyzeFunctionName:
+    Type: String
+  HistoryFunctionName:
+    Type: String
+  RepairEstimatesFunctionName:
+    Type: String
+  PersistenceFunctionName:
+    Type: String
+  ApiName:
+    Type: String
+  ApiStageName:
+    Type: String
+  AlarmEmail:
+    Type: String
+    Default: ""
+  # Namespace the application emits custom metrics under (Bedrock latency,
+  # token usage, confidence score). The AI engine publishes these via EMF /
+  # PutMetricData so the alarms below have data to evaluate.
+  AppMetricNamespace:
+    Type: String
+    Default: FleetMate/Diagnostics
+
+Conditions:
+  HasAlarmEmail: !Not [!Equals [!Ref AlarmEmail, ""]]
+
+Resources:
+
+  # SNS topic that every critical alarm notifies. Also the escalation channel
+  # for confidence-score degradation.
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "fleetmate-alarms-${Environment}"
+      DisplayName: FleetMate critical alarms
+
+  AlarmEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasAlarmEmail
+    Properties:
+      TopicArn: !Ref AlarmTopic
+      Protocol: email
+      Endpoint: !Ref AlarmEmail
+
+  # -------------------------------------------------------------------------
+  # 1. Lambda error-rate alarms (one per function). Referenced by the
+  #    DeploymentPreference so a canary that raises errors auto-rolls back.
+  # -------------------------------------------------------------------------
+  AnalyzeErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "fleetmate-analyze-errors-${Environment}"
+      AlarmDescription: Elevated error count on the analyze Lambda.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref AnalyzeFunctionName
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+
+  HistoryErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "fleetmate-history-errors-${Environment}"
+      AlarmDescription: Elevated error count on the history Lambda.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref HistoryFunctionName
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+
+  RepairEstimatesErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "fleetmate-repair-estimates-errors-${Environment}"
+      AlarmDescription: Elevated error count on the repair-estimates Lambda.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref RepairEstimatesFunctionName
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+
+  PersistenceErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "fleetmate-persistence-errors-${Environment}"
+      AlarmDescription: Elevated error count on the persistence Lambda (DLQ risk).
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref PersistenceFunctionName
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+
+  # -------------------------------------------------------------------------
+  # 2. API latency alarm - p99 latency on the analyze path breaching the 5s
+  #    acceptance budget (Req 1.5). Also an analyze-duration alarm used for
+  #    canary rollback.
+  # -------------------------------------------------------------------------
+  ApiLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "fleetmate-api-latency-${Environment}"
+      AlarmDescription: API Gateway p99 latency exceeded the acceptance budget.
+      Namespace: AWS/ApiGateway
+      MetricName: Latency
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref ApiName
+        - Name: Stage
+          Value: !Ref ApiStageName
+      ExtendedStatistic: p99
+      Period: 60
+      EvaluationPeriods: 3
+      Threshold: 5000 # ms, aligns with the 5s acceptance budget (Req 1.5)
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+
+  AnalyzeLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "fleetmate-analyze-latency-${Environment}"
+      AlarmDescription: Analyze Lambda p99 duration regression (canary guard).
+      Namespace: AWS/Lambda
+      MetricName: Duration
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref AnalyzeFunctionName
+      ExtendedStatistic: p99
+      Period: 60
+      EvaluationPeriods: 3
+      Threshold: 5000 # ms
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+
+  # -------------------------------------------------------------------------
+  # 3. Bedrock response-latency alarm - custom metric the AI engine publishes
+  #    for each InvokeModel round-trip. Guards the 30s generation timeout.
+  # -------------------------------------------------------------------------
+  BedrockLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "fleetmate-bedrock-latency-${Environment}"
+      AlarmDescription: Bedrock InvokeModel latency approaching the 30s timeout.
+      Namespace: !Ref AppMetricNamespace
+      MetricName: BedrockInvokeLatencyMs
+      ExtendedStatistic: p95
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 25000 # ms, warning well below the 30s hard timeout (Req 2.6)
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+
+  # -------------------------------------------------------------------------
+  # 4. Token-usage spike alarm - custom metric for Bedrock token consumption.
+  # -------------------------------------------------------------------------
+  TokenUsageSpikeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "fleetmate-token-usage-${Environment}"
+      AlarmDescription: Bedrock token consumption spiked above the expected band.
+      Namespace: !Ref AppMetricNamespace
+      MetricName: BedrockTokensUsed
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 500000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+
+  # -------------------------------------------------------------------------
+  # 5. Confidence-score degradation alarm - custom metric for the average
+  #    diagnosis confidence. Sustained low confidence => escalation review.
+  # -------------------------------------------------------------------------
+  ConfidenceDegradationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "fleetmate-confidence-degradation-${Environment}"
+      AlarmDescription: >
+        Average diagnosis confidence fell below the escalation threshold (0.70),
+        indicating degraded AI quality.
+      Namespace: !Ref AppMetricNamespace
+      MetricName: DiagnosisConfidenceScore
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 0.70 # tech.md confidence threshold
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+
+  # -------------------------------------------------------------------------
+  # Reliability: alert when any message lands in the persistence DLQ.
+  # -------------------------------------------------------------------------
+  DlqMessagesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "fleetmate-persistence-dlq-${Environment}"
+      AlarmDescription: Messages arrived in the persistence dead-letter queue.
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !Sub "fleetmate-persistence-dlq-${Environment}"
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopic
+
+Outputs:
+  AlarmTopicArn:
+    Description: SNS topic ARN for critical alarms.
+    Value: !Ref AlarmTopic
+  AnalyzeErrorAlarmName:
+    Description: Analyze error alarm name (canary rollback trigger).
+    Value: !Ref AnalyzeErrorAlarm
+  AnalyzeLatencyAlarmName:
+    Description: Analyze latency alarm name (canary rollback trigger).
+    Value: !Ref AnalyzeLatencyAlarm
+  HistoryErrorAlarmName:
+    Description: History error alarm name (canary rollback trigger).
+    Value: !Ref HistoryErrorAlarm
+  RepairEstimatesErrorAlarmName:
+    Description: Repair-estimates error alarm name (canary rollback trigger).
+    Value: !Ref RepairEstimatesErrorAlarm

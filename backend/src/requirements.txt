@@ -1,0 +1,8 @@
+# Runtime dependencies bundled into the Lambda deployment package by sam build.
+# SAM resolves this file relative to each function's CodeUri (backend/src).
+# Test-only deps (pytest, hypothesis) live in backend/requirements.txt and are
+# intentionally NOT shipped to Lambda.
+#
+# boto3 is also present in the Lambda Python runtime, but pinning it here makes
+# the deployed version explicit and reproducible.
+boto3==1.43.31

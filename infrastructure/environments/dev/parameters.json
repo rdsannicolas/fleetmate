@@ -1,0 +1,11 @@
+[
+  { "ParameterKey": "Environment", "ParameterValue": "dev" },
+  { "ParameterKey": "LogLevel", "ParameterValue": "DEBUG" },
+  { "ParameterKey": "BedrockModelId", "ParameterValue": "amazon.nova-lite-v1:0" },
+  { "ParameterKey": "BedrockGuardrailId", "ParameterValue": "8kizo4b64wg7" },
+  { "ParameterKey": "BedrockGuardrailVersion", "ParameterValue": "1" },
+  { "ParameterKey": "SessionTtlDays", "ParameterValue": "7" },
+  { "ParameterKey": "ApiStageName", "ParameterValue": "v1" },
+  { "ParameterKey": "CanaryDeploymentType", "ParameterValue": "AllAtOnce" },
+  { "ParameterKey": "AlarmEmail", "ParameterValue": "" }
+]

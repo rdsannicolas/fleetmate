@@ -1,0 +1,9 @@
+# Development / test dependencies for the FleetMate backend.
+# Install locally with:  pip install -r requirements.txt
+#
+# Runtime (Lambda) dependencies are declared separately in src/requirements.txt
+# so sam build bundles only what the functions need at runtime -- pytest and
+# hypothesis are never shipped to Lambda.
+boto3==1.43.31
+pytest==8.3.4
+hypothesis==6.122.3

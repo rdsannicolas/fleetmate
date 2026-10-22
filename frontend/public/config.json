@@ -1,0 +1,8 @@
+{
+  "apiBaseUrl": "https://nd1obul9lc.execute-api.us-east-1.amazonaws.com/v1",
+  "cognitoDomain": "https://fleetmate-dev-137197474841.auth.us-east-1.amazoncognito.com",
+  "userPoolId": "us-east-1_CbKRhK1A0",
+  "appClientId": "37346t57adsfhc7f9f9ig1k00b",
+  "redirectUri": "https://d358zxqdpijf30.cloudfront.net",
+  "logoutUri": "https://d358zxqdpijf30.cloudfront.net"
+}

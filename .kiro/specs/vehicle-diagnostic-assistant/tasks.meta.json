@@ -1,0 +1,1141 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Scaffold backend project and define core data models and typed outcomes": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093079933
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093094691
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093423554
+      }
+    ],
+    "2.1 Implement the shared symptom validator in `shared/validation/`": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093081376
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093427459
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093739140
+      }
+    ],
+    "2.2 Implement structured JSON logging and Cognito/RBAC auth helpers": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093081458
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093428789
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093740463
+      }
+    ],
+    "3.1 Implement the `FleetMateDiagnostics` repository in `diagnostics/repositories/`": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093081545
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093430141
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093741901
+      }
+    ],
+    "4. Checkpoint - core models, utilities, and repository": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093081652
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093753620
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093761617
+      }
+    ],
+    "5.1 Implement session lifecycle and context assembly in `diagnostics/services/`": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093081699
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093765327
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094100231
+      }
+    ],
+    "6.1 Define reusable prompt templates in `diagnostics/prompts/`": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093081764
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093766251
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094101222
+      }
+    ],
+    "6.2 Implement the `AiEngine` interface and `BedrockAiEngine` adapter in `diagnostics/services/`": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093081839
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094115056
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094537102
+      }
+    ],
+    "7.1 Implement escalation decision in `diagnostics/services/`": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093081887
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094548981
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094678032
+      }
+    ],
+    "8. Checkpoint - conversation, AI engine, and escalation": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093081954
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094684234
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094688278
+      }
+    ],
+    "9.1 Implement event emission and the persistence Lambda in `diagnostics/events/`": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093082007
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094116894
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094538458
+      }
+    ],
+    "10.1 Implement authorized retrieval in `diagnostics/services/`": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093082060
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094117805
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094539725
+      }
+    ],
+    "11.1 Implement `analyze(...)` orchestration in `diagnostics/services/`": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093082110
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094691594
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094888841
+      }
+    ],
+    "12. Checkpoint - store and service orchestration": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093082163
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094892985
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094898930
+      }
+    ],
+    "13.1 Implement thin handlers in `handlers/`": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093082214
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094904284
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792095253574
+      }
+    ],
+    "14.1 Author CloudFormation templates in `infrastructure/cloudformation/` and `backend/template.yaml`": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093082269
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792095257095
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792095657764
+      }
+    ],
+    "15. Final checkpoint - full workflow verification": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093082328
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792095662118
+      },
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792095667623
+      }
+    ],
+    "2. Implement shared cross-cutting utilities": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093740518
+      }
+    ],
+    "3. Implement the DynamoDB single-table repository": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792093741950
+      }
+    ],
+    "5. Implement the Conversation_Manager over the repository": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094100318
+      }
+    ],
+    "6. Implement the AI_Engine Bedrock adapter behind a provider-agnostic interface": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094537187
+      }
+    ],
+    "9. Implement the asynchronous Interaction_Store write path": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094538508
+      }
+    ],
+    "10. Implement authorized read side of the Interaction_Store": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094539772
+      }
+    ],
+    "7. Implement escalation logic in the service layer": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094678114
+      }
+    ],
+    "11. Implement the diagnostics service orchestration": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792094888902
+      }
+    ],
+    "13. Implement thin Lambda handlers and API Gateway endpoints": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792095253665
+      }
+    ],
+    "14. Implement CloudFormation infrastructure as code": [
+      {
+        "executionId": "7a7ad032-d61f-4ec1-a6e7-73507ac0916a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792095657841
+      }
+    ],
+    "16.1 Scaffold the SPA project and structure under `frontend/`": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531121541
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531133574
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531334590
+      }
+    ],
+    "16.2 Implement the runtime config loader in `config/runtimeConfig.ts`": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531122676
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531345849
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531505150
+      }
+    ],
+    "17.1 Implement PKCE helpers in `auth/pkce.ts`": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531122748
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531347253
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531506623
+      }
+    ],
+    "17.2 Implement the token store and validity predicate in `auth/tokenStore.ts`": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531122887
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531348280
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531507692
+      }
+    ],
+    "17.3 Implement the auth client (login, callback, exchange, logout) in `auth/authClient.ts`": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531122956
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531514012
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531698866
+      }
+    ],
+    "17.4 Implement the route guard in `auth/routeGuard.ts`": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123007
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531699964
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531943730
+      }
+    ],
+    "18.1 Implement the API client in `services/apiClient.ts`": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123066
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531705056
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531942799
+      }
+    ],
+    "19. Checkpoint - config, auth, and API client": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123119
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531960902
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531978551
+      }
+    ],
+    "20.1 Implement `pages/LoginLandingPage.tsx` and `pages/CallbackPage.tsx`": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123171
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531985600
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532243429
+      }
+    ],
+    "21.1 Implement `pages/SubmitSymptomPage.tsx` with input gating and in-flight guard": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123228
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531987085
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532245230
+      }
+    ],
+    "21.2 Implement `pages/DiagnosisResultView.tsx`": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123276
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531988407
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532246626
+      }
+    ],
+    "22.1 Implement `pages/SessionHistoryPage.tsx`": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123322
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531989705
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532247662
+      }
+    ],
+    "23. Checkpoint - web pages and client logic": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123370
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532252624
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532256519
+      }
+    ],
+    "24.1 Add private S3 + CloudFront (OAC, SPA fallback, HTTPS redirect) to the stack": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123449
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532265043
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532526914
+      }
+    ],
+    "24.2 Add the Cognito UserPoolDomain and re-enable OAuth on the existing App_Client": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123497
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532529719
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532659591
+      }
+    ],
+    "24.3 Add CORS for the CloudFront origin on the browser-called API methods": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123546
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532660689
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532896126
+      },
+      {
+        "executionId": "94d99209-e770-4223-ac16-708b8100205c",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792550903029
+      },
+      {
+        "executionId": "94d99209-e770-4223-ac16-708b8100205c",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792551313646
+      },
+      {
+        "executionId": "bda3f6a4-c082-4611-9fc7-b69cc9a809ed",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792551795425
+      },
+      {
+        "executionId": "bda3f6a4-c082-4611-9fc7-b69cc9a809ed",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792552152840
+      }
+    ],
+    "25.1 Generate the SPA runtime config and wire deferred CloudFront URLs": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123595
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532922716
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792533252912
+      }
+    ],
+    "25.2 Build and upload SPA assets to S3 and invalidate the CloudFront cache": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123641
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792533254225
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792533607207
+      }
+    ],
+    "26.1 Wire the SPA entry, router, and route guard in `frontend/src`": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123688
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532266149
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532528352
+      }
+    ],
+    "27. Final checkpoint - web UI feature verification": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531123736
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792533618924
+      },
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792533647526
+      }
+    ],
+    "16. Scaffold the React/TypeScript SPA and runtime config loader": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531505204
+      }
+    ],
+    "18. Implement the API client service": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531942854
+      }
+    ],
+    "17. Implement the auth module (Hosted UI, PKCE, token lifecycle, guard)": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792531943774
+      }
+    ],
+    "20. Implement the login/landing and callback pages": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532243510
+      }
+    ],
+    "21. Implement the submit-symptom and diagnosis-result views": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532246689
+      }
+    ],
+    "22. Implement the session-history view": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532247711
+      }
+    ],
+    "26. Integrate SPA routing and wire the pages together": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532528404
+      }
+    ],
+    "24. Add web-tier infrastructure as code (S3 + CloudFront + Cognito Hosted UI)": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792532896216
+      }
+    ],
+    "25. Implement deploy-time wiring and SPA config generation": [
+      {
+        "executionId": "08b24e62-ceac-461e-9709-618be74ad0b3",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792533607286
+      }
+    ],
+    "28.1 Add `customerId` to `InteractionRecord` and write the GSI2 key attributes on new records": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617407220
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617432928
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617591256
+      }
+    ],
+    "28.2 Thread `customerId` through the write path from the Session to the persisted record": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617407294
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617714507
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617931361
+      }
+    ],
+    "28.3 Add the GSI2 newest-first query method to the repository": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617407360
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617597072
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617710776
+      }
+    ],
+    "29.1 Implement `get_most_recent_prior_interaction` in `diagnostics/services/interaction_store.py`": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617407409
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617935596
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618097554
+      }
+    ],
+    "30.1 Implement `handlers/previous.py`": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617407457
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618109523
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618240968
+      }
+    ],
+    "31. Checkpoint - prior-interaction backend read path": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617407510
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618253682
+      }
+    ],
+    "32.1 Add GSI2 to the `FleetMateDiagnostics` table in `backend/template.yaml`": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617407585
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618262130
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618380005
+      }
+    ],
+    "32.2 Add the least-privilege `PreviousFunction` Lambda": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617407657
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618383235
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618494150
+      }
+    ],
+    "32.3 Add the `GET /diagnostics/previous` API method and its OPTIONS preflight": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617407705
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618497477
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618584247
+      }
+    ],
+    "33.1 Add `previous(currentSessionId)` to `services/apiClient.ts`": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617407757
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618588586
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618836150
+      }
+    ],
+    "34.1 Implement `pages/PriorInteractionPanel.tsx`": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617407807
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618849916
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618965934
+      }
+    ],
+    "34.2 Wire `PriorInteractionPanel` into `AuthenticatedApp.tsx`": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617407857
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618969416
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792619046975
+      }
+    ],
+    "35.1 Build and deploy the backend and force an API Gateway stage redeploy": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617407905
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792619053288
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792620569708
+      }
+    ],
+    "35.2 Build and publish the frontend": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617407955
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792620573835
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792620729597
+      }
+    ],
+    "36. Final checkpoint - most-recent prior interaction feature verification": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617408004
+      },
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792620854519
+      }
+    ],
+    "28. Extend the repository write path and record model to carry `customerId` and GSI2 keys (forward-only)": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792617931430
+      }
+    ],
+    "29. Implement the owner-scoped service read method on `InteractionStore`": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618097611
+      }
+    ],
+    "30. Implement the thin `GET /diagnostics/previous` handler": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618241038
+      }
+    ],
+    "32. Add the prior-interaction infrastructure to the SAM stack (forward-only)": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618584312
+      }
+    ],
+    "33. Implement the SPA API-client `previous(...)` method and typed outcome": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792618836223
+      }
+    ],
+    "34. Implement the `PriorInteractionPanel` page and wire it into the authenticated view": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792619047036
+      }
+    ],
+    "35. Deploy the prior-interaction feature": [
+      {
+        "executionId": "ba8358d1-b816-40c6-bc35-f5c165d6b8ce",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792620729650
+      }
+    ],
+    "28.4 Write property test for prior-interaction selection (repository/service selection logic)": [
+      {
+        "executionId": "867a00a4-25c6-4500-81e1-0d168b586a3a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792621069439
+      },
+      {
+        "executionId": "867a00a4-25c6-4500-81e1-0d168b586a3a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792621245812
+      }
+    ],
+    "30.3 Write unit tests for the handler response shape and owner resolution": [
+      {
+        "executionId": "867a00a4-25c6-4500-81e1-0d168b586a3a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792621070842
+      },
+      {
+        "executionId": "867a00a4-25c6-4500-81e1-0d168b586a3a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792621247208
+      }
+    ],
+    "34.3 Write component tests for the panel states": [
+      {
+        "executionId": "867a00a4-25c6-4500-81e1-0d168b586a3a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792621071989
+      },
+      {
+        "executionId": "867a00a4-25c6-4500-81e1-0d168b586a3a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792621248236
+      }
+    ],
+    "29.2 Write property test for owner-scoped resolution": [
+      {
+        "executionId": "867a00a4-25c6-4500-81e1-0d168b586a3a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792621255139
+      },
+      {
+        "executionId": "867a00a4-25c6-4500-81e1-0d168b586a3a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792621366656
+      }
+    ],
+    "29.3 Write property test for the empty-result case": [
+      {
+        "executionId": "867a00a4-25c6-4500-81e1-0d168b586a3a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792621256002
+      },
+      {
+        "executionId": "867a00a4-25c6-4500-81e1-0d168b586a3a",
+        "chatSessionId": "sess_2cc96fbf-2a23-4c11-94c7-0625ef40ad2d",
+        "timestamp": 1792621365653
+      }
+    ]
+  }
+}
